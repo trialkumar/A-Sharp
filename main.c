@@ -3,42 +3,29 @@
 #include "chunk.h"
 #include "debug.h"
 #include "vm.h"
+#include "scanner.h" // <--- Import the scanner
 
 int main(int argc, const char* argv[]) {
-  initVM();
-  Chunk chunk;
-  initChunk(&chunk);
+  // Feed source code directly to the scanner
+  const char* source = "1 + 2 * (3 - 4) * (5/10)";
+  initScanner(source);
 
-  // 1. Push 1.2
-  int c1 = addConstant(&chunk, 1.2);
-  writeChunk(&chunk, OP_CONSTANT);
-  writeChunk(&chunk, c1);
+  // Print every token found until we hit the end
+  int line = -1;
+  for (;;) {
+    Token token = scanToken();
+    if (token.line != line) {
+      printf("%4d ", token.line);
+      line = token.line;
+    } else {
+      printf("   | ");
+    }
+    
+    // Print the token type and the actual text
+    printf("%2d '%.*s'\n", token.type, token.length, token.start); 
 
-  // 2. Push 3.4
-  int c2 = addConstant(&chunk, 3.4);
-  writeChunk(&chunk, OP_CONSTANT);
-  writeChunk(&chunk, c2);
+    if (token.type == TOKEN_EOF) break;
+  }
 
-  // 3. Add (1.2 + 3.4 -> 4.6)
-  writeChunk(&chunk, OP_ADD);
-
-  // 4. Push 5.6
-  int c3 = addConstant(&chunk, 5.6);
-  writeChunk(&chunk, OP_CONSTANT);
-  writeChunk(&chunk, c3);
-
-  // 5. Divide (4.6 / 5.6)
-  writeChunk(&chunk, OP_DIVIDE);
-
-  // 6. Negate the result
-  writeChunk(&chunk, OP_NEGATE);
-
-  // 7. Return (Print it)
-  writeChunk(&chunk, OP_RETURN);
-
-  interpret(&chunk);
-
-  freeChunk(&chunk);
-  freeVM();
   return 0;
 }
