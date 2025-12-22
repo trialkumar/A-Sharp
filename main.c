@@ -1,31 +1,43 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "common.h"
 #include "chunk.h"
 #include "debug.h"
 #include "vm.h"
-#include "scanner.h" // <--- Import the scanner
 
-int main(int argc, const char* argv[]) {
-  // Feed source code directly to the scanner
-  const char* source = "1 + 2 * (3 - 4) * (5/10)";
-  initScanner(source);
+// NEW: Include the compiler
+#include "compiler.h" 
 
-  // Print every token found until we hit the end
-  int line = -1;
+static void repl() {
+  char line[1024];
   for (;;) {
-    Token token = scanToken();
-    if (token.line != line) {
-      printf("%4d ", token.line);
-      line = token.line;
-    } else {
-      printf("   | ");
+    printf("> ");
+
+    if (!fgets(line, sizeof(line), stdin)) {
+      printf("\n");
+      break;
+    }
+
+    // Compile and run the line
+    Chunk chunk;
+    initChunk(&chunk);
+    
+    if (compile(line, &chunk)) {
+      interpret(&chunk);
     }
     
-    // Print the token type and the actual text
-    printf("%2d '%.*s'\n", token.type, token.length, token.start); 
-
-    if (token.type == TOKEN_EOF) break;
+    freeChunk(&chunk);
   }
+}
 
+int main(int argc, const char* argv[]) {
+  initVM();
+
+  // Run the Read-Eval-Print Loop (REPL)
+  repl();
+
+  freeVM();
   return 0;
 }
