@@ -186,6 +186,15 @@ static void expression() {
   parsePrecedence(PREC_ASSIGNMENT);
 }
 
+static void literal() {
+  switch (parser.previous.type) {
+    case TOKEN_FALSE: emitByte(OP_FALSE); break;
+    case TOKEN_NIL:   emitByte(OP_NIL); break;
+    case TOKEN_TRUE:  emitByte(OP_TRUE); break;
+    default: return; // Unreachable
+  }
+}
+
 //RULES TABLE
 
 ParseRule rules[] = {
@@ -203,6 +212,9 @@ ParseRule rules[] = {
   [TOKEN_NUMBER]        = {number,   NULL,   PREC_NONE},
   [TOKEN_ERROR]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EOF]           = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_FALSE]         = {literal,  NULL,   PREC_NONE},
+  [TOKEN_TRUE]          = {literal,  NULL,   PREC_NONE},
+  [TOKEN_NIL]           = {literal,  NULL,   PREC_NONE},
 };
 
 static ParseRule* getRule(TokenType type) {
