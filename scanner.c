@@ -95,6 +95,32 @@ static Token number(){
 
 //The Main Scan Function
 
+static TokenType checkKeyword(int start, int length, const char* rest, TokenType type){
+    if (scanner.current - scanner.start == start + length &&
+      memcmp(scanner.start + start, rest, length) == 0) {
+    return type;
+  }
+  return TOKEN_IDENTIFIER;
+}
+
+static TokenType identifierType(){
+    switch (scanner.start[0]){
+    case 'f': return checkKeyword(1,4,"alse", TOKEN_FALSE);
+    case 'n': return checkKeyword(1,2,"il", TOKEN_NIL);
+    case 't': return checkKeyword(1,3,"rue", TOKEN_TRUE);
+    }
+    return TOKEN_IDENTIFIER;
+}
+
+static Token identifier() {
+  while ((peek() >= 'a' && peek() <= 'z') || 
+         (peek() >= 'A' && peek() <= 'Z') || 
+          peek() == '_') {
+    advance();
+  }
+  return makeToken(identifierType());
+}
+
 Token scanToken(){
     skipWhitespace();
     scanner.start = scanner.current;
@@ -103,8 +129,15 @@ Token scanToken(){
 
     char c = advance();
 
+    //check for letters
+    if((c>='a'&&c<='z') || (c>='A'&&c<='Z')||c=='_'){
+        return identifier();
+    }
+
     //Check for Numbers;
     if(c>= '0' && c<='9') return number();
+
+
 
     switch(c){
         case '(': return makeToken(TOKEN_LEFT_PAREN);
