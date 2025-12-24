@@ -93,6 +93,13 @@ static Token number(){
     return makeToken(TOKEN_NUMBER);
 }
 
+static bool match(char expected) {
+  if (isAtEnd()) return false;
+  if (*scanner.current != expected) return false;
+  scanner.current++;
+  return true;
+}
+
 //The Main Scan Function
 
 static TokenType checkKeyword(int start, int length, const char* rest, TokenType type){
@@ -151,6 +158,16 @@ Token scanToken(){
         case '+': return makeToken(TOKEN_PLUS);
         case '/': return makeToken(TOKEN_SLASH);
         case '*': return makeToken(TOKEN_STAR);
+
+        // Two-character operators
+        case '!':
+        return makeToken(match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
+        case '=':
+        return makeToken(match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
+        case '<':
+        return makeToken(match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
+        case '>':
+        return makeToken(match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
     }
     return errorToken("Unexpected Character.");
 }
