@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "common.h"
@@ -67,11 +67,7 @@ static void concatenate() {
   memcpy(chars + a->length, b->chars, b->length);
   chars[length] = '\0';
 
-  // We use copyString which allocates a NEW object and copies our buffer
-  // This is slightly inefficient (double allocation) but safe for now.
   ObjString* result = copyString(chars, length);
-  
-  // Free the temporary buffer
   FREE_ARRAY(char, chars, length + 1);
 
   pop();
@@ -85,17 +81,8 @@ static bool valuesEqual(Value a, Value b) {
     case VAL_BOOL:   return AS_BOOL(a) == AS_BOOL(b);
     case VAL_NIL:    return true;
     case VAL_NUMBER: return AS_NUMBER(a) == AS_NUMBER(b);
-
-    /*Old code loop through the string to check "apple" == "apple"*/
-    // case VAL_OBJ: {
-    //   ObjString* aString = AS_STRING(a);
-    //   ObjString* bString = AS_STRING(b);
-    //   return aString->length == bString->length &&
-    //          memcmp(aString->chars, bString->chars, aString->length) == 0;
-    // }
-    case VAL_OBJ: return AS_OBJ(a) == AS_OBJ(b); //Fast code after strig Interning
-    
-    default:         return false; // Should not happen
+    case VAL_OBJ:    return AS_OBJ(a) == AS_OBJ(b); // Fast pointer compare
+    default:         return false;
   }
 }
 
@@ -135,6 +122,12 @@ static InterpretResult run() {
       case OP_NIL:   push(NIL_VAL); break;
       case OP_TRUE:  push(BOOL_VAL(true)); break;
       case OP_FALSE: push(BOOL_VAL(false)); break;
+      case OP_POP:   pop(); break; // <--- NEW: Handle the pop
+      case OP_GET_GLOBAL:
+      case OP_DEFINE_GLOBAL:
+      case OP_SET_GLOBAL:
+        // We will implement these next!
+        break;
       case OP_EQUAL: {
         Value b = pop();
         Value a = pop();
@@ -169,9 +162,13 @@ static InterpretResult run() {
         }
         push(NUMBER_VAL(-AS_NUMBER(pop())));
         break;
-      case OP_RETURN: {
+      case OP_PRINT: { // <--- NEW: Handle print
         printValue(pop());
         printf("\n");
+        break;
+      }
+      case OP_RETURN: {
+        // No longer prints result automatically
         return INTERPRET_OK;
       }
     }

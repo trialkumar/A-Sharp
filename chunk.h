@@ -9,6 +9,10 @@ typedef enum {
   OP_NIL,
   OP_TRUE,
   OP_FALSE,
+  OP_POP,
+  OP_GET_GLOBAL,
+  OP_DEFINE_GLOBAL,
+  OP_SET_GLOBAL,
   OP_EQUAL,
   OP_GREATER,
   OP_LESS,
@@ -18,6 +22,7 @@ typedef enum {
   OP_DIVIDE,
   OP_NOT,
   OP_NEGATE,
+  OP_PRINT,
   OP_RETURN,
 } OpCode;
 
@@ -25,13 +30,13 @@ typedef struct {
   int count;
   int capacity;
   uint8_t* code;
-  int* lines; // <--- NEW: Stores line number for each byte of code
+  int* lines; //Stores line number for each byte of code
   ValueArray constants;
 } Chunk;
 
 void initChunk(Chunk* chunk);
 void freeChunk(Chunk* chunk);
-void writeChunk(Chunk* chunk, uint8_t byte, int line); // <--- Note the extra argument!
+void writeChunk(Chunk* chunk, uint8_t byte, int line); //Note the extra argument!
 int addConstant(Chunk* chunk, Value value);
 
 #endif

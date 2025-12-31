@@ -4,13 +4,12 @@
 #include "common.h"
 #include "compiler.h"
 #include "scanner.h"
-#include "object.h" // <--- REQUIRED
+#include "object.h" 
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
 #endif
 
-// --- PARSER ---
 typedef struct {
   Token current;
   Token previous;
@@ -19,17 +18,8 @@ typedef struct {
 } Parser;
 
 typedef enum {
-  PREC_NONE, 
-  PREC_ASSIGNMENT,
-  PREC_OR,
-  PREC_AND,
-  PREC_EQUALITY,
-  PREC_COMPARISON,
-  PREC_TERM,
-  PREC_FACTOR,
-  PREC_UNARY,
-  PREC_CALL,
-  PREC_PRIMARY
+  PREC_NONE, PREC_ASSIGNMENT, PREC_OR, PREC_AND, PREC_EQUALITY,
+  PREC_COMPARISON, PREC_TERM, PREC_FACTOR, PREC_UNARY, PREC_CALL, PREC_PRIMARY
 } Precedence;
 
 typedef void (*ParseFn)();
@@ -45,24 +35,21 @@ Chunk* compilingChunk;
 
 static Chunk* currentChunk() { return compilingChunk; }
 
-// --- ERROR HANDLING ---
 static void errorAt(Token* token, const char* message) {
   if (parser.panicMode) return;
   parser.panicMode = true;
-  
   fprintf(stderr, "[line %d] Error", token->line);
-  if (token->type == TOKEN_EOF) 
-    fprintf(stderr, " at end");
-
-  else if (token->type != TOKEN_ERROR) 
-    fprintf(stderr, " at '%.*s'", token->length, token->start);
+  if (token->type == TOKEN_EOF) fprintf(stderr, " at end");
+  else if (token->type != TOKEN_ERROR) fprintf(stderr, " at '%.*s'", token->length, token->start);
   fprintf(stderr, ": %s\n", message);
   parser.hadError = true;
 }
+
 static void error(const char* message) { errorAt(&parser.previous, message); }
 static void errorAtCurrent(const char* message) { errorAt(&parser.current, message); }
 
-// --- HELPERS ---
+// --- HELPER FUNCTIONS MOVED TO TOP ---
+
 static void advance() {
   parser.previous = parser.current;
   for (;;) {
@@ -71,10 +58,22 @@ static void advance() {
     errorAtCurrent(parser.current.start);
   }
 }
+
 static void consume(TokenType type, const char* message) {
   if (parser.current.type == type) { advance(); return; }
   errorAtCurrent(message);
 }
+
+static bool check(TokenType type) {
+  return parser.current.type == type;
+}
+
+static bool match(TokenType type) {
+  if (!check(type)) return false;
+  advance();
+  return true;
+}
+
 static void emitByte(uint8_t byte) {
   writeChunk(currentChunk(), byte, parser.previous.line);
 }
@@ -86,17 +85,19 @@ static void emitConstant(Value value) {
 
 // --- FORWARD DECLARATIONS ---
 static void expression();
+static void statement();
+static void declaration();
 static ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
-// --- PARSING RULES ---
+// --- GRAMMAR ---
+
 static void number() {
   double value = strtod(parser.previous.start, NULL);
   emitConstant(NUMBER_VAL(value));
 }
 
 static void string() {
-  // Trims quotes and creates the object
   emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
@@ -159,7 +160,7 @@ ParseRule rules[] = {
   [TOKEN_LESS]          = {NULL,     binary, PREC_COMPARISON},
   [TOKEN_LESS_EQUAL]    = {NULL,     binary, PREC_COMPARISON},
   [TOKEN_IDENTIFIER]    = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_STRING]        = {string,   NULL,   PREC_NONE}, // <--- STRING RULE
+  [TOKEN_STRING]        = {string,   NULL,   PREC_NONE},
   [TOKEN_NUMBER]        = {number,   NULL,   PREC_NONE},
   [TOKEN_AND]           = {NULL,     NULL,   PREC_NONE},
   [TOKEN_CLASS]         = {NULL,     NULL,   PREC_NONE},
@@ -197,14 +198,46 @@ static void parsePrecedence(Precedence precedence) {
 
 static void expression() { parsePrecedence(PREC_ASSIGNMENT); }
 
+// --- STATEMENTS ---
+
+static void printStatement() {
+  expression();
+  consume(TOKEN_SEMICOLON, "Expect ';' after value.");
+  emitByte(OP_PRINT);
+}
+
+static void expressionStatement() {
+  expression();
+  consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
+  emitByte(OP_POP);
+}
+
+static void statement() {
+  if (match(TOKEN_PRINT)) {
+    printStatement();
+  } else {
+    expressionStatement();
+  }
+}
+
+static void declaration() {
+  statement();
+}
+
+//Compile Entry Point
+
 bool compile(const char* source, Chunk* chunk) {
+  printf("DEBUG: This fn is running\n");
   initScanner(source);
   compilingChunk = chunk;
   parser.hadError = false;
   parser.panicMode = false;
   advance();
-  expression();
-  consume(TOKEN_EOF, "Expect end of expression.");
+
+  while (!match(TOKEN_EOF)) {
+    declaration();
+  }
+
   emitReturn();
   return !parser.hadError;
 }
