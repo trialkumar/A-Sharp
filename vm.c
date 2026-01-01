@@ -32,10 +32,12 @@ void initVM() {
   resetStack();
   vm.objects = NULL;
   initTable(&vm.strings);
+  initTable(&vm.globals);
 }
 
 void freeVM() {
   freeTable(&vm.strings);
+  freeTable(&vm.globals);
   freeObjects();
 }
 
@@ -87,6 +89,8 @@ static bool valuesEqual(Value a, Value b) {
 }
 
 static InterpretResult run() {
+
+#define READ_STRING() AS_STRING(READ_CONSTANT())
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
 #define BINARY_OP(valueType, op) \
@@ -123,11 +127,41 @@ static InterpretResult run() {
       case OP_TRUE:  push(BOOL_VAL(true)); break;
       case OP_FALSE: push(BOOL_VAL(false)); break;
       case OP_POP:   pop(); break; // <--- NEW: Handle the pop
-      case OP_GET_GLOBAL:
-      case OP_DEFINE_GLOBAL:
-      case OP_SET_GLOBAL:
-        // We will implement these next!
-        break;
+
+    case OP_DEFINE_GLOBAL: {
+      ObjString* name = READ_STRING();
+      // Store the value from the top of the stack into the hash table
+      tableSet(&vm.globals, name, peek(0));
+      pop(); // Pop the value now that it's saved
+      break;
+    }
+
+    case OP_GET_GLOBAL: {
+      ObjString* name = READ_STRING();
+      Value value;
+      // Look up the variable name in the hash table
+      if (!tableGet(&vm.globals, name, &value)) {
+        runtimeError("Undefined variable '%s'.", name->chars);
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      push(value); // Push the found value onto the stack
+      break;
+    }
+
+    case OP_SET_GLOBAL: {
+      ObjString* name = READ_STRING();
+      // Try to set the value. 
+      // tableSet returns 'true' if it created a NEW key (which we don't want for assignment)
+      if (tableSet(&vm.globals, name, peek(0))) {
+        // If we accidentally created a new key, delete it and error out
+        tableDelete(&vm.globals, name); 
+        runtimeError("Undefined variable '%s'.", name->chars);
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      // Note: We do NOT pop(). Assignment is an expression (a = 1 returns 1).
+      break;
+    }
+      break;
       case OP_EQUAL: {
         Value b = pop();
         Value a = pop();

@@ -48,7 +48,7 @@ static void errorAt(Token* token, const char* message) {
 static void error(const char* message) { errorAt(&parser.previous, message); }
 static void errorAtCurrent(const char* message) { errorAt(&parser.current, message); }
 
-// --- HELPER FUNCTIONS MOVED TO TOP ---
+//HELPER FUNCTIONS MOVED TO TOP
 
 static void advance() {
   parser.previous = parser.current;
@@ -79,14 +79,67 @@ static void emitByte(uint8_t byte) {
 }
 static void emitBytes(uint8_t byte1, uint8_t byte2) { emitByte(byte1); emitByte(byte2); }
 static void emitReturn() { emitByte(OP_RETURN); }
+
+static uint8_t makeConstant(Value value) {
+  int constant = addConstant(currentChunk(), value);
+  if (constant > UINT8_MAX) {
+    error("Too many constants in one chunk.");
+    return 0;
+  }
+  return (uint8_t)constant;
+}
+
 static void emitConstant(Value value) {
   emitBytes(OP_CONSTANT, (uint8_t)addConstant(currentChunk(), value));
 }
 
-// --- FORWARD DECLARATIONS ---
+//Declaration Functions
 static void expression();
 static void statement();
-static void declaration();
+
+static uint8_t identifierConstant(Token* name) {
+  // Take the string "x" from the source and create a String Object for it
+  return makeConstant(OBJ_VAL(copyString(name->start, name->length)));
+}
+
+static uint8_t parseVariable(const char* errorMessage) {
+  consume(TOKEN_IDENTIFIER, errorMessage);
+
+  // Define the name of the variable as a constant in the chunk
+  return identifierConstant(&parser.previous);
+}
+
+static void defineVariable(uint8_t global) {
+  // Emit the instruction to define the global, passing the index of its name
+  emitBytes(OP_DEFINE_GLOBAL, global);
+}
+
+static void varDeclaration() {
+  // 1. Parse the variable name ("x")
+  uint8_t global = parseVariable("Expect variable name.");
+
+  // 2. Parse the initializer ("= 10")
+  if (match(TOKEN_EQUAL)) {
+    expression(); // Compiles "10"
+  } else {
+    // Handling "var x;" (no value) -> default to nil
+    emitByte(OP_NIL);
+  }
+
+  consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+
+  // 3. Emit the instruction to save it
+  defineVariable(global);
+}
+
+
+static void declaration() {
+  if (match(TOKEN_VAR)) {
+    varDeclaration(); // <--- Add this!
+  } else {
+    statement();
+  }
+}
 static ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
@@ -102,6 +155,24 @@ static void string() {
 }
 
 static void grouping() { expression(); consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression."); }
+
+
+static void namedVariable(Token name) {
+  uint8_t arg = identifierConstant(&name);
+  
+  if (match(TOKEN_EQUAL)) {
+    // If we see '=', it's a SET operation: x = ...
+    expression();
+    emitBytes(OP_SET_GLOBAL, arg);
+  } else {
+    // Otherwise, it's a GET operation: print x
+    emitBytes(OP_GET_GLOBAL, arg);
+  }
+}
+
+static void variable() {
+  namedVariable(parser.previous);
+}
 
 static void unary() {
   TokenType operatorType = parser.previous.type;
@@ -159,7 +230,7 @@ ParseRule rules[] = {
   [TOKEN_GREATER_EQUAL] = {NULL,     binary, PREC_COMPARISON},
   [TOKEN_LESS]          = {NULL,     binary, PREC_COMPARISON},
   [TOKEN_LESS_EQUAL]    = {NULL,     binary, PREC_COMPARISON},
-  [TOKEN_IDENTIFIER]    = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_IDENTIFIER] =    {variable, NULL,   PREC_NONE},
   [TOKEN_STRING]        = {string,   NULL,   PREC_NONE},
   [TOKEN_NUMBER]        = {number,   NULL,   PREC_NONE},
   [TOKEN_AND]           = {NULL,     NULL,   PREC_NONE},
@@ -220,9 +291,6 @@ static void statement() {
   }
 }
 
-static void declaration() {
-  statement();
-}
 
 //Compile Entry Point
 
