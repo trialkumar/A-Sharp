@@ -11,38 +11,97 @@
 #include "vm.h"
 #include "compiler.h"
 
-static void repl() {
-    char* line;
-    
-    // readline returns NULL on EOF (Ctrl+D)
-    while ((line = readline("> ")) != NULL) {
-        // Allow empty lines to be skipped
-        if (strlen(line) == 0) {
-            free(line);
-            continue;
-        }
+//FILE READING HELPER
+static char* readFile(const char* path) {
+  FILE* file = fopen(path, "rb");
+  if (file == NULL) {
+    fprintf(stderr, "Could not open file \"%s\".\n", path);
+    exit(74);
+  }
 
-        // Added the line to history so Up/Down arrows work
-        add_history(line);
+  fseek(file, 0L, SEEK_END);
+  size_t fileSize = ftell(file);
+  rewind(file);
 
-        Chunk chunk;
-        initChunk(&chunk);
+  char* buffer = (char*)malloc(fileSize + 1);
+  if (buffer == NULL) {
+    fprintf(stderr, "Not enough memory to read \"%s\".\n", path);
+    exit(74);
+  }
 
-        if (compile(line, &chunk)) {
-            interpret(&chunk);
-        }
+  size_t bytesRead = fread(buffer, sizeof(char), fileSize, file);
+  if (bytesRead < fileSize) {
+    fprintf(stderr, "Could not read file \"%s\".\n", path);
+    exit(74);
+  }
+  
+  buffer[bytesRead] = '\0';
 
-        freeChunk(&chunk);
-        
-        // readline allocates a new string for every line, 
-        // free the memory
-        free(line); 
-    }
+  fclose(file);
+  return buffer;
 }
 
+//FILE EXECUTION
+static void runFile(const char* path) {
+  char* source = readFile(path);
+  
+  Chunk chunk;
+  initChunk(&chunk);
+
+  if (!compile(source, &chunk)) {
+    // Compile error
+    free(source);
+    freeChunk(&chunk); // Clean up even on error
+    exit(65);
+  }
+
+  InterpretResult result = interpret(&chunk);
+  
+  freeChunk(&chunk);
+  free(source);
+
+  if (result == INTERPRET_COMPILE_ERROR) exit(65);
+  if (result == INTERPRET_RUNTIME_ERROR) exit(70);
+}
+
+//REPL
+static void repl() {
+  char* line;
+  
+  // Using GNU Readline for history and arrow keys
+  while ((line = readline("> ")) != NULL) {
+    if (strlen(line) == 0) {
+      free(line);
+      continue;
+    }
+
+    add_history(line);
+
+    Chunk chunk;
+    initChunk(&chunk);
+
+    if (compile(line, &chunk)) {
+      interpret(&chunk);
+    }
+
+    freeChunk(&chunk);
+    free(line); 
+  }
+}
+
+//MAIN ENTRY POINT
 int main(int argc, const char* argv[]) {
-    initVM();
+  initVM();
+
+  if (argc == 1) {
     repl();
-    freeVM();
-    return 0;
+  } else if (argc == 2) {
+    runFile(argv[1]);
+  } else {
+    fprintf(stderr, "Usage: clox [path]\n");
+    exit(64);
+  }
+
+  freeVM();
+  return 0;
 }
