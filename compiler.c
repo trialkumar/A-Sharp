@@ -17,10 +17,23 @@ typedef struct {
   bool panicMode;
 } Parser;
 
+#define UINT8_COUNT (UINT8_MAX +1)
+
 typedef enum {
   PREC_NONE, PREC_ASSIGNMENT, PREC_OR, PREC_AND, PREC_EQUALITY,
   PREC_COMPARISON, PREC_TERM, PREC_FACTOR, PREC_UNARY, PREC_CALL, PREC_PRIMARY
 } Precedence;
+
+typedef struct {
+  Token name;
+  int depth;
+}Local;
+
+typedef struct{
+  Local locals[UINT8_COUNT];
+  int localCount;
+  int scopeDepth;
+}Compiler;
 
 typedef void (*ParseFn)();
 
@@ -31,16 +44,27 @@ typedef struct {
 } ParseRule;
 
 Parser parser;
+Compiler* current = NULL;
 Chunk* compilingChunk;
+
+//FORWARD DECLARATIONS: let compiler know this fn exists
+static void expression();
+static void statement();
+static void declaration();
+static ParseRule* getRule(TokenType type);
+static void parsePrecedence(Precedence precedence);
 
 static Chunk* currentChunk() { return compilingChunk; }
 
 static void errorAt(Token* token, const char* message) {
   if (parser.panicMode) return;
   parser.panicMode = true;
+  
   fprintf(stderr, "[line %d] Error", token->line);
   if (token->type == TOKEN_EOF) fprintf(stderr, " at end");
+
   else if (token->type != TOKEN_ERROR) fprintf(stderr, " at '%.*s'", token->length, token->start);
+
   fprintf(stderr, ": %s\n", message);
   parser.hadError = true;
 }
@@ -93,9 +117,6 @@ static void emitConstant(Value value) {
   emitBytes(OP_CONSTANT, (uint8_t)addConstant(currentChunk(), value));
 }
 
-//Declaration Functions
-static void expression();
-static void statement();
 
 static uint8_t identifierConstant(Token* name) {
   // Take the string "x" from the source and create a String Object for it
@@ -135,7 +156,7 @@ static void varDeclaration() {
 
 static void declaration() {
   if (match(TOKEN_VAR)) {
-    varDeclaration(); // <--- Add this!
+    varDeclaration();
   } else {
     statement();
   }
@@ -271,7 +292,7 @@ static void parsePrecedence(Precedence precedence) {
 
 static void expression() { parsePrecedence(PREC_ASSIGNMENT); }
 
-// --- STATEMENTS ---
+//STATEMENTS
 
 static void printStatement() {
   expression();
@@ -285,9 +306,23 @@ static void expressionStatement() {
   emitByte(OP_POP);
 }
 
+//How compiler will handle { and }
+static void block() {
+  while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+    declaration();
+  }
+
+  consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+}
+
 static void statement() {
   if (match(TOKEN_PRINT)) {
     printStatement();
+
+  } else if (match(TOKEN_LEFT_BRACE)) {
+    // scope depth will handled here
+    block(); 
+    
   } else {
     expressionStatement();
   }
@@ -297,8 +332,15 @@ static void statement() {
 //Compile Entry Point
 
 bool compile(const char* source, Chunk* chunk) {
-  printf("DEBUG: This fn is running\n");
   initScanner(source);
+  
+  // Set up the compiler state
+  Compiler compiler;
+  compiler.localCount = 0;
+  compiler.scopeDepth = 0;
+
+  current = &compiler;
+  
   compilingChunk = chunk;
   parser.hadError = false;
   parser.panicMode = false;
