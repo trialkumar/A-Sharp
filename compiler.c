@@ -306,6 +306,21 @@ static void expressionStatement() {
   emitByte(OP_POP);
 }
 
+//Depth of Scope
+static void beginScope() {
+  current->scopeDepth++;
+}
+
+static void endScope() {
+  current->scopeDepth--;
+
+  while (current->localCount > 0 &&
+         current->locals[current->localCount - 1].depth > current->scopeDepth) {
+    emitByte(OP_POP);
+    current->localCount--; // Forget it in the compiler
+  }
+}
+
 //How compiler will handle { and }
 static void block() {
   while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
@@ -318,12 +333,15 @@ static void block() {
 static void statement() {
   if (match(TOKEN_PRINT)) {
     printStatement();
-
-  } else if (match(TOKEN_LEFT_BRACE)) {
-    // scope depth will handled here
-    block(); 
-    
-  } else {
+  } 
+  
+  else if (match(TOKEN_LEFT_BRACE)) {
+    beginScope();
+    block();
+    endScope();
+  } 
+  
+  else {
     expressionStatement();
   }
 }
