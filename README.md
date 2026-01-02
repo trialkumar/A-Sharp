@@ -13,9 +13,7 @@ A bytecode virtual machine and interpreter for the own programming language, wri
 - [Build](#build)
 - [Usage](#usage)
 - [Development notes](#development-notes)
-- [Contributing](#contributing)
-- [References](#references)
-- [License](#license)
+- [Prerequisites](#prerequisites)
 
 ---
 
