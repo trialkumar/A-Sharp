@@ -17,11 +17,14 @@ A bytecode virtual machine and interpreter for the own programming language, wri
 ---
 
 ## Features
-- Scanning: tokenizes source code into Lox tokens
+- Scanning: tokenizes source code into tokens
 - Compiling: Pratt parser and bytecode generator
 - Virtual Machine: stack-based VM that executes compiled chunks
 - REPL: interactive Read-Eval-Print Loop with line editing/history
-- Basic arithmetic, control flow, variables, and functions (as implemented in the repo)
+- Basic arithmetic and expressions
+- Control flow: if/else statements (conditional execution)
+- Variables: local and global variables with lexical scoping and assignment
+- Functions (as implemented in the repo)
 
 ---
 
@@ -29,7 +32,7 @@ A bytecode virtual machine and interpreter for the own programming language, wri
 Key files and directories (top-level):
 
 - `main.c` — program entry & CLI
-- `scanner.c`, `scanner.h` — tokenizer for Lox source
+- `scanner.c`, `scanner.h` — tokenizer for source
 - `compiler.c`, `compiler.h` — parser + bytecode compiler
 - `vm.c`, `vm.h` — virtual machine executing bytecode
 - `object.c`, `object.h` — runtime objects and value handling
@@ -86,17 +89,31 @@ Run the REPL:
 ./clox
 ```
 
-Execute a Lox source file:
+Execute a source file (supports `.as` extensions):
 
 ```bash
 ./clox path/to/script.lox
+./clox path/to/script.as
 ```
 
-Example Lox snippet to try in the REPL:
+Example snippets to try in the REPL:
 
-```lox
+```
 print 1 + 2 * (3 - 4);
 ```
+
+A conditional and variables example:
+
+```
+var a = 10;
+if (a > 5) {
+  print "big";
+} else {
+  print "small";
+}
+```
+
+Note: the interpreter reads files with the `.as` extension; try `./clox test.as`.
 
 ---
 
