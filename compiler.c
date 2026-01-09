@@ -485,9 +485,18 @@ static void forStatement(){
   int exitJump = -1;
   if (!match(TOKEN_SEMICOLON)) {
     expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
 
     // Jump out of the loop if the condition is false
     exitJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP);
+  }
+
+  //Increment
+  if (!match(TOKEN_RIGHT_PAREN)) {
+    int bodyJump = emitJump(OP_JUMP); // Jump over the increment to the body
+    int incrementStart = currentChunk()->count;
+    
   }
   }
 
