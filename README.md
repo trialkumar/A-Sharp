@@ -105,14 +105,33 @@ Example snippets to try in the REPL:
 print 1 + 2 * (3 - 4);
 ```
 
-A conditional and variables example:
+An example with current capabilities of A-Sharp:
 
 ```
-var a = 10;
-if (a > 5) {
-  print "big";
-} else {
-  print "small";
+var i = 0;
+while (i < 5) {
+  print i;
+  i = i + 1;
+}
+
+//Global Scope
+var a = "Programming with ";
+var b = "A-Sharp";
+{
+  //Local Scope
+  var a = 15;
+  var b = 15;
+  print a+b;
+}
+print a + b;
+
+a = 8;
+
+if (a > 10){
+  print "Hello";
+}
+else {
+  print "World!";
 }
 ```
 
