@@ -484,6 +484,17 @@ static void forStatement(){
 
   int loopStart = currentChunk()->count;
 
+  //Condition
+  int exitJump = -1;
+  if (!match(TOKEN_SEMICOLON)) {
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+
+    // Jump out of the loop if the condition is false
+    exitJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP);
+  }
+
 }
 
 static void statement() {
