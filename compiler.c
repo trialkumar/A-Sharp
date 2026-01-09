@@ -470,6 +470,19 @@ static void whileStatement() {
 }
 
 static void forStatement(){
+  beginScope(); // A for loop gets its own scope for variables like 'i'
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
+
+  //Initializer
+  if (match(TOKEN_SEMICOLON)) {
+    // No initializer: for (; ...)
+  } else if (match(TOKEN_VAR)) {
+    varDeclaration();
+  } else {
+    expressionStatement();
+  }
+
+  int loopStart = currentChunk()->count;
 
 }
 
