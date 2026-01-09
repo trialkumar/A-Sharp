@@ -469,40 +469,22 @@ static void whileStatement() {
   emitByte(OP_POP);
 }
 
-static void forStatement(){
+static void forStatement() {
   beginScope(); // A for loop gets its own scope for variables like 'i'
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
 
-  //Initializer
+  // 1. Initializer
   if (match(TOKEN_SEMICOLON)) {
     // No initializer: for (; ...)
   } else if (match(TOKEN_VAR)) {
     varDeclaration();
   } else {
     expressionStatement();
-
-  //Condition
-  int exitJump = -1;
-  if (!match(TOKEN_SEMICOLON)) {
-    expression();
-    consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
-
-    // Jump out of the loop if the condition is false
-    exitJump = emitJump(OP_JUMP_IF_FALSE);
-    emitByte(OP_POP);
-  }
-
-  //Increment
-  if (!match(TOKEN_RIGHT_PAREN)) {
-    int bodyJump = emitJump(OP_JUMP); // Jump over the increment to the body
-    int incrementStart = currentChunk()->count;
-    
-  }
   }
 
   int loopStart = currentChunk()->count;
 
-  //Condition
+  // 2. Condition
   int exitJump = -1;
   if (!match(TOKEN_SEMICOLON)) {
     expression();
@@ -513,6 +495,30 @@ static void forStatement(){
     emitByte(OP_POP);
   }
 
+  // 3. Increment
+  if (!match(TOKEN_RIGHT_PAREN)) {
+    int bodyJump = emitJump(OP_JUMP); // Jump over the increment
+    int incrementStart = currentChunk()->count;
+    
+    expression();
+    emitByte(OP_POP);
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+
+    emitLoop(loopStart); // After increment, loop back to start/condition
+    loopStart = incrementStart; // Next time, loop back to increment, not start
+    patchJump(bodyJump);
+  }
+
+  // 4. Body
+  statement();
+  emitLoop(loopStart); // Loop back to start (or increment)
+
+  if (exitJump != -1) {
+    patchJump(exitJump);
+    emitByte(OP_POP);
+  }
+
+  endScope();
 }
 
 static void statement() {

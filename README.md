@@ -134,6 +134,18 @@ else {
   print "World!";
 }
 ```
+An example of a Fibonacci generator:
+```
+// A Fibonacci generator using a for loop!
+var a = 0;
+var b = 1;
+for (var i = 0; i < 5; i = i + 1) {
+  print a;
+  var temp = a + b;
+  a = b;
+  b = temp;
+}
+```
 
 Note: the interpreter reads files with the `.as` extension; try `./asharp test.as`.
 
