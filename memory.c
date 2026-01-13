@@ -21,14 +21,22 @@ return result;
 
 static void freeObject(Obj* object) {
   switch (object->type) {
+    case OBJ_STRING: {
+      ObjString* string = (ObjString*)object;
+      // Free the character array first
+      FREE_ARRAY(char, string->chars, string->length + 1);
+      // Then free the struct itself
+      FREE(ObjString, object);
+      break;
+    }
     case OBJ_FUNCTION: {
-        ObjFunction* function = (ObjFunction*)object;
-        freeChunk(&function->chunk);
-        FREE(ObjFunction, object);
-        break;
-      }
+      ObjFunction* function = (ObjFunction*)object;
+      freeChunk(&function->chunk);
+      FREE(ObjFunction, object);
+      break;
     }
   }
+}
 
 void freeObjects() {
   Obj* object = vm.objects;
