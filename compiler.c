@@ -580,6 +580,11 @@ static void initCompiler(Compiler* compiler, ObjType type) {
   compiler->function = newFunction(); // Create the empty "Recipe Card"
   current = compiler;
 
+  //If we are compiling a named function, copy its name
+  if (type != TYPE_SCRIPT) {
+    compiler->function->name = copyString(parser.previous.start, parser.previous.length);
+  }
+
   Local* local = &compiler->locals[compiler->localCount++];
   local->depth = 0;
   local->name.start = ""; // Internal use only
