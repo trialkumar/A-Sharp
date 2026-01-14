@@ -30,10 +30,15 @@ typedef struct {
   int depth;
 }Local;
 
+typedef enum {
+  TYPE_FUNCTION,
+  TYPE_SCRIPT
+} FunctionType;
+
 typedef struct Compiler {
   struct Compiler* enclosing;
   ObjFunction* function;
-  ObjType type;
+  FunctionType type;
 
   Local locals[UINT8_COUNT];
   int localCount;
@@ -592,17 +597,13 @@ static void initCompiler(Compiler* compiler, ObjType type) {
 }
 
 //Compile Entry Point
-bool compile(const char* source, Chunk* chunk) {
+ObjFunction* compile(const char* source) {
   initScanner(source);
   
-  // Set up the compiler state
   Compiler compiler;
-  compiler.localCount = 0;
-  compiler.scopeDepth = 0;
+  // Initialize the compiler as a "Script" (the main body of code)
+  initCompiler(&compiler, TYPE_SCRIPT);
 
-  current = &compiler;
-  
-  compilingChunk = chunk;
   parser.hadError = false;
   parser.panicMode = false;
   advance();
@@ -611,6 +612,7 @@ bool compile(const char* source, Chunk* chunk) {
     declaration();
   }
 
-  emitReturn();
-  return !parser.hadError;
+  // Using the new endCompiler() which returns the function object
+  ObjFunction* function = endCompiler();
+  return parser.hadError ? NULL : function;
 }
