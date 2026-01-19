@@ -33,6 +33,8 @@ A bytecode virtual machine and interpreter for the own programming language, wri
 - 08-01-2026 — **Added support for `while` statements** in the compiler.
 - 10-01-2026 — **Implemented `for` loop statement**
 - 11-01-2026 — **Created a file name `test.as` for some sample codes that lang supports so far**
+- 12-01-2026 — **Updated `object.h` for supporting fn calling**
+- 14-01-2026 — **compiler now converts `test.as` file to a funtional object**
 
 ## Repository Structure
 Key files and directories (top-level):
@@ -89,6 +91,9 @@ make clean && make
 ---
 
 ## Usage
+
+> **Important**: Current Interpreter of A-Sharp converts `test.as` file in functional object, and it will not print output on the terminal. You need to switch to `Asharp-interpreter` branch for testing `test.as`
+
 Run the REPL:
 
 ```bash

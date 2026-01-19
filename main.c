@@ -42,37 +42,7 @@ static char* readFile(const char* path) {
   return buffer;
 }
 
-// FILE EXECUTION (Merged and Fixed)
-static void runFile(const char* path) {
-  // Enforce the .as extension
-  const char* ext = strrchr(path, '.');
-
-  // If there is no dot, or the extension isn't ".as", throw an error
-  if (!ext || strcmp(ext, ".as") != 0) {
-      fprintf(stderr, "Error: Source file must end with .as\n");
-      exit(64);
-  }
-
-  char* source = readFile(path);
-  
-  // NEW LOGIC: Compile returns a function object
-  ObjFunction* function = compile(source);
-  if (function == NULL) {
-    free(source);
-    exit(65); // Compile error
-  }
-
-  InterpretResult result = interpret(function);
-  
-  free(source); 
-  // Note: We don't free the function here yet because the VM 
-  // or GC will handle object cleanup later.
-
-  if (result == INTERPRET_COMPILE_ERROR) exit(65);
-  if (result == INTERPRET_RUNTIME_ERROR) exit(70);
-}
-
-// REPL
+//FILE EXECUTION
 static void repl() {
   char line[1024];
   for (;;) {
@@ -83,12 +53,26 @@ static void repl() {
       break;
     }
 
-    // NEW LOGIC: Compile returns a function, then run it.
+    // NEW LOGIC:
     ObjFunction* function = compile(line);
     if (function != NULL) {
-      interpret(function);
+        printf("Compiled to a function object!\n");
+        // interpret(function); // Will be add this later
     }
   }
+}
+
+static void runFile(const char* path) {
+  char* source = readFile(path);
+  
+  // NEW LOGIC:
+  ObjFunction* function = compile(source);
+  if (function == NULL) exit(65); // Compile error
+
+  printf("Compiled to a function object!\n");
+  // interpret(function); // We will add this later!
+
+  free(source);
 }
 
 // MAIN ENTRY POINT
