@@ -52,9 +52,9 @@ for (var i = 0; i < 5; i = i + 1) {
   b = temp;
 }
 
-fun sayHi() { print "Hi"; }
-print sayHi; // Should print <fn sayHi>
-
+//fun greet() {
+//  print "Hello From A-Sharp";
+//}
 
 print "";
 print "=== Execution Complete ===";
