@@ -142,6 +142,11 @@ fun add(a, b) {
 var result = add(10, 20);
 print result;
 
+fun fib(n) {
+  if (n < 2) return n;
+  return fib(n - 2) + fib(n - 1);
+}
+
 ```
 
 **Conditional Statements:**

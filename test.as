@@ -24,7 +24,7 @@ fun isEven(n) {
 print isEven(10);
 print isEven(7);
 
-print "============Recurvise Function==========="
+print "============Recurvise Function===========";
 
 fun fib(n) {
   if (n < 2) return n;
