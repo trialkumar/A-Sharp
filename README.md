@@ -223,17 +223,6 @@ asharp/
 
 ---
 
-## Changelog
-
-| Date       | Update                                                    |
-|------------|-----------------------------------------------------------|
-| 2026-01-07 | Added `if`/`else` statement support                       |
-| 2026-01-08 | Implemented `while` loops                                 |
-| 2026-01-10 | Added `for` loop statement                                |
-| 2026-01-11 | Created `test.as` with example programs                   |
-
----
-
 ## Development
 
 ### Developer Notes
