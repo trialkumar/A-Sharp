@@ -58,8 +58,8 @@ static void repl() {
 
     ObjFunction* function = compile(line);
     if (function != NULL) {
-        printf("Compiled to a function object!\n");
-        // interpret(function); // Will be add this later
+        //printf("Compiled to a function object!\n");
+        interpret(function); // triggering interpreter in the terminal
     }
 
     // readline allocates memory for every line, so we must free it
