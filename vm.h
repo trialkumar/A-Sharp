@@ -1,5 +1,5 @@
-#ifndef clox_vm_h
-#define clox_vm_h
+#ifndef asharp_vm_h
+#define asharp_vm_h
 
 #include "chunk.h"
 #include "value.h"
