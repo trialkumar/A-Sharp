@@ -22,6 +22,9 @@ return result;
 static void freeObject(Obj* object) {
   //Cleaning funtion and string objects
   switch (object->type) {
+    case OBJ_NATIVE:
+      FREE(ObjNative, object);
+      break;
     case OBJ_STRING: {
       ObjString* string = (ObjString*)object;
       // Free the character array first
