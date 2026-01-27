@@ -35,6 +35,8 @@ A-Sharp is a dynamically-typed scripting language with a stack-based bytecode VM
 - **Function Calling**: You create a function and call them in the codebase
 
 ### Upcoming
+- Native Functions
+- Read Input from the User
 - Classes and objects
 - Standard library
 - Module system
