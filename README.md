@@ -33,6 +33,7 @@ A-Sharp is a dynamically-typed scripting language with a stack-based bytecode VM
 - **I/O**: `print` statement for output
 - **REPL**: Interactive shell with readline support
 - **Function Calling**: You create a function and call them in the codebase
+- **return function**: Declare `return` in the user defined functions
 
 ### Upcoming
 - Native Functions
