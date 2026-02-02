@@ -78,6 +78,12 @@ static Value inputNative(int argCount, Value* args) {
   if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
     size_t length = strlen(buffer);
     
+    // Remove the trailing newline '\n' if present
+    if (length > 0 && buffer[length - 1] == '\n') {
+      buffer[length - 1] = '\0';
+      length--;
+    }
+    
     //Create A-Sharp string and return it
     return OBJ_VAL(copyString(buffer, (int)length));
   }
