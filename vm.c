@@ -56,6 +56,15 @@ static Value sqrtNative(int argCount, Value* args) {
   return NUMBER_VAL(sqrt(value));
 }
 
+static Value floorNative(int argCount, Value* args) {
+  if (argCount != 1 || !IS_NUMBER(args[0])) {
+    return NIL_VAL;
+  }
+
+  double value = AS_NUMBER(args[0]);
+  return NUMBER_VAL(floor(value));
+}
+
 void initVM() {
   resetStack();
   vm.objects = NULL;
@@ -64,6 +73,7 @@ void initVM() {
 
   defineNative("clock", clockNative); //Supporting time
   defineNative("sqrt", sqrtNative); //Supporting Square root
+  defineNative("floor", floorNative); // Supporting floor op
 }
 
 void freeVM() {
