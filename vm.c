@@ -65,6 +65,50 @@ static Value floorNative(int argCount, Value* args) {
   return NUMBER_VAL(floor(value));
 }
 
+static Value inputNative(int argCount, Value* args) {
+  //If user passed a prompt string, print it
+  if (argCount > 0 && IS_STRING(args[0])) {
+    printf("%s", AS_STRING(args[0])->chars);
+  }
+
+  //Buffer to hold input (max 1024 chars for now)
+  char buffer[1024];
+  
+  //Read line from stdin
+  if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
+    size_t length = strlen(buffer);
+    
+    // Remove the trailing newline '\n' if present
+    if (length > 0 && buffer[length - 1] == '\n') {
+      buffer[length - 1] = '\0';
+      length--;
+    }
+    
+    //Create A-Sharp string and return it
+    return OBJ_VAL(copyString(buffer, (int)length));
+  }
+  
+  return NIL_VAL; // Return nil if read fails
+}
+
+//Native Function for power operations
+//Later Caret (^) can be added as power operator
+static Value powNative(int argCount, Value* args) {
+  if (argCount != 2) {
+    // pow() requires exactly 2 arguments
+    return NIL_VAL; 
+  }
+
+  if (!IS_NUMBER(args[0]) || !IS_NUMBER(args[1])) {
+    return NIL_VAL;
+  }
+
+  double base = AS_NUMBER(args[0]);
+  double exponent = AS_NUMBER(args[1]);
+  
+  return NUMBER_VAL(pow(base, exponent));
+}
+
 void initVM() {
   resetStack();
   vm.objects = NULL;
@@ -74,6 +118,8 @@ void initVM() {
   defineNative("clock", clockNative); //Supporting time
   defineNative("sqrt", sqrtNative); //Supporting Square root
   defineNative("floor", floorNative); // Supporting floor op
+  defineNative("input", inputNative); //Taking Input form the user
+  defineNative("pow", powNative); //Power Operator;
 }
 
 void freeVM() {
