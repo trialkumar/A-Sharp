@@ -85,17 +85,35 @@ static void defineNative(const char* name, NativeFn function) {
   pop();
 }
 
+//Native Function for power operations
+//Later Caret (^) can be added as power operator
+static Value powNative(int argCount, Value* args) {
+  if (argCount != 2) {
+    // pow() requires exactly 2 arguments
+    return NIL_VAL; 
+  }
+
+  if (!IS_NUMBER(args[0]) || !IS_NUMBER(args[1])) {
+    return NIL_VAL;
+  }
+
+  double base = AS_NUMBER(args[0]);
+  double exponent = AS_NUMBER(args[1]);
+  
+  return NUMBER_VAL(pow(base, exponent));
+}
+
 void initVM() {
   resetStack();
   vm.objects = NULL;
   initTable(&vm.strings);
   initTable(&vm.globals);
 
-  defineNative("clock", clockNative);
-  defineNative("sqrt", sqrtNative);
-  defineNative("floor", floorNative);
-  defineNative("input", inputNative);
-  defineNative("pow", powNative);
+  defineNative("clock", clockNative); //Supporting time
+  defineNative("sqrt", sqrtNative); //Supporting Square root
+  defineNative("floor", floorNative); // Supporting floor op
+  defineNative("input", inputNative); //Taking Input form the user
+  defineNative("pow", powNative); //Power Operator;
 }
 
 void freeVM() {
