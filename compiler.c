@@ -269,6 +269,12 @@ static void function(FunctionType type) {
   
   // Emit the code to store the function in a constant
   emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+
+  // Emit the upvalue information for the VM
+  for (int i = 0; i < function->upvalueCount; i++) {
+    emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
+    emitByte(compiler.upvalues[i].index);
+  }
 }
 
 static void funDeclaration() {
@@ -321,7 +327,6 @@ static int resolveLocal(Compiler* compiler, Token* name) {
 static int addUpvalue(Compiler* compiler, uint8_t index, bool isLocal) {
   int upvalueCount = compiler->function->upvalueCount;
 
-  // Check if we already captured this variable
   for (int i = 0; i < upvalueCount; i++) {
     Upvalue* upvalue = &compiler->upvalues[i];
     if (upvalue->index == index && upvalue->isLocal == isLocal) {
@@ -342,18 +347,14 @@ static int addUpvalue(Compiler* compiler, uint8_t index, bool isLocal) {
 static int resolveUpvalue(Compiler* compiler, Token* name) {
   if (compiler->enclosing == NULL) return -1;
 
-  //Try to find it as a LOCAL in the immediate enclosing function
   int local = resolveLocal(compiler->enclosing, name);
   if (local != -1) {
-    // Found it! Mark it as "captured" (isLocal = true)
     compiler->enclosing->locals[local].isCaptured = true;
     return addUpvalue(compiler, (uint8_t)local, true);
   }
 
-  //Recursive step: Try to find it as an UPVALUE in the enclosing function
   int upvalue = resolveUpvalue(compiler->enclosing, name);
   if (upvalue != -1) {
-    // Found it deeper up! Mark it as "passed through" (isLocal = false)
     return addUpvalue(compiler, (uint8_t)upvalue, false);
   }
 
@@ -367,7 +368,7 @@ static void namedVariable(Token name, bool canAssign) {
   if (arg != -1) {
     getOp = OP_GET_LOCAL;
     setOp = OP_SET_LOCAL;
-  } else if ((arg = resolveUpvalue(current, &name)) != -1) { // <--- THIS IS THE NEW PART
+  } else if ((arg = resolveUpvalue(current, &name)) != -1) {
     getOp = OP_GET_UPVALUE;
     setOp = OP_SET_UPVALUE;
   } else {
